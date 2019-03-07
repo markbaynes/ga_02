@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib import style
 style.use ("fivethirtyeight")
-# TEST LINE ONLY
+# TEST LINE
 landscape="global"
 
 def init_landscape(num_cities):
