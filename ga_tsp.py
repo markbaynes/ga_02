@@ -146,17 +146,65 @@ def main_genetic(elite_ids, fit_pop):
 		for each_dict in fit_pop:
 			for key, value in each_dict.items ():
 				if key == "id" and value == elite_ids[elite_pointer]:
-					elite_list.append(each_dict)
+					elite_list.append(each_dict["cities"])
 				else:
 					pass
 		elite_pointer+=1
-	print(elite_list)
+	for _ in elite_list:
+		print(f"{  _  }")
+	return elite_list
+
+def cross_mutate(elite_list, num_cities):
+	"""Single point crossover and mutation.
+	This version applies crossover to all the elite chromosomes."""
+	# print (f"elite_list in {len(elite_list)}\n")
+	new_pool = []
+	split_point = int (num_cities / 2)
+	print (f"Split point {split_point}")
+	elite_counter = 0
+	while elite_counter < len(elite_list):
+		champion=elite_list[elite_counter]
+		print (f"{champion}")
+		for key, value in champion.items ():
+			# Generates one gene
+			if key == "cities":
+				crossed = []
+				x = value[0:split_point]
+				y = elite_list[elite_counter+1][split_point:]
+				# print (f"elite counter A {elite_counter}")
+				crossed.extend (x[0:split_point])
+				crossed.extend (y[split_point:])
+				new_pool.append (crossed)
+		elite_counter+=1
+			# 	# Gives second gene
+			# 	crossed_2 = []
+			# 	crossed_2.extend (value[split_point:])
+			# 	crossed_2.extend (value[0:split_point])
+			# 	new_pool.append (crossed_2)
+			# else:
+			# 	pass
+	for item in new_pool:
+		print(f"{item}")
+
+# 	print (f"new_pool {new_pool}\n")
+	# new_dict_list = list_to_dict (new_pool)
+	# for chromosome in new_dict_list:
+	# 	int_random = random.uniform (0, 1)
+	# 	if int_random <= p_mutate:
+	# 		target_c = chromosome
+	# 		mutate (target_c, num_cities)
+	# 		chromosome = target_c
+	# 	elif int_random > p_mutate:
+	# 		pass
+	# mutated_pop = renumber_route_dict (new_dict_list, num_cities)
+	# print (f"cross mutate out {len(mutated_pop)}\n{mutated_pop}\n")
+	# return mutated_pop
 
 
 
 
 
-def run_genetic(runs, population, num_cities, elite_prop):
+def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	"""Calls main functions."""
 	# INITIAL SETUP
 	global landscape
@@ -167,11 +215,13 @@ def run_genetic(runs, population, num_cities, elite_prop):
 	min_value, max_value, sorted_distances=run_stats(fit_pop)
 	sorted_distances=normalise_distances(min_value, max_value, sorted_distances)
 	elite_ids=select_elite (sorted_distances, elite_prop)
-	main_genetic(elite_ids, fit_pop)
-	# MAIN LOOP
+	elite_list=main_genetic (elite_ids, fit_pop)
+	# cross_mutate(elite_list, num_cities)
+
+# MAIN LOOP
 	# extract_fittest(ranked_pop, elite_prop)
 
-run_genetic(runs=50, population=50, num_cities=10, elite_prop=20)
+run_genetic(runs=50, population=50, num_cities=10, elite_prop=20, p_mutate=0.001)
 
 # def extract_fittest(distance_data, elite_prop):
 # 	"""Get the N fittest chromosomes (those with shortest route) as a percentage of the ranked population."""
