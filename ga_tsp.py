@@ -150,39 +150,29 @@ def main_genetic(elite_ids, fit_pop):
 				else:
 					pass
 		elite_pointer+=1
-	for _ in elite_list:
-		print(f"{  _  }")
+	for x in elite_list:
+		print(f"{x}")
 	return elite_list
 
-def cross_mutate(elite_list, num_cities):
+def cross_mutate(elite_list, population):
 	"""Single point crossover and mutation.
 	This version applies crossover to all the elite chromosomes."""
 	# print (f"elite_list in {len(elite_list)}\n")
 	new_pool = []
-	split_point = int (num_cities / 2)
+	split_point = np.random.randint(0,10)
 	print (f"Split point {split_point}")
 	elite_counter = 0
+	print(len(elite_list))
 	while elite_counter < len(elite_list):
-		champion=elite_list[elite_counter]
-		print (f"{champion}")
-		for key, value in champion.items ():
-			# Generates one gene
-			if key == "cities":
-				crossed = []
-				x = value[0:split_point]
-				y = elite_list[elite_counter+1][split_point:]
-				# print (f"elite counter A {elite_counter}")
-				crossed.extend (x[0:split_point])
-				crossed.extend (y[split_point:])
-				new_pool.append (crossed)
+		# Generates one gene
+		crossed = []
+		x = elite_list[elite_counter][0:split_point]
+		print(x)
+		y = elite_list[elite_counter+1][split_point:]
+		print(y)
+
 		elite_counter+=1
-			# 	# Gives second gene
-			# 	crossed_2 = []
-			# 	crossed_2.extend (value[split_point:])
-			# 	crossed_2.extend (value[0:split_point])
-			# 	new_pool.append (crossed_2)
-			# else:
-			# 	pass
+
 	for item in new_pool:
 		print(f"{item}")
 
@@ -216,7 +206,7 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	sorted_distances=normalise_distances(min_value, max_value, sorted_distances)
 	elite_ids=select_elite (sorted_distances, elite_prop)
 	elite_list=main_genetic (elite_ids, fit_pop)
-	# cross_mutate(elite_list, num_cities)
+	cross_mutate(elite_list, population)
 
 # MAIN LOOP
 	# extract_fittest(ranked_pop, elite_prop)
