@@ -1,6 +1,5 @@
 # -*- coding: UTF-8 -*-
 from collections.__init__ import defaultdict
-import numpy as np
 import random
 import sys
 import operator
@@ -19,31 +18,46 @@ import plotly.plotly as py
 import plotly.tools as tls
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib import style
-style.use ("fivethirtyeight")
-# TEST LINE
+# from matplotlib import style
+# style.use ("fivethirtyeight")
+
 landscape="global"
 
 def init_landscape(num_cities):
 	"""Generate list of random x,y co-ordinates in 2D space.
 	Only need to represent this seed route - not all possible x,y in the space."""
 	global landscape
-	np.random.seed (123)
-	landscape = np.random.randint (1, 100, (num_cities, 2))
-	# print(f"Landscape {landscape}")
+	# landscape = [(0, 0), (94, 21), (200, 5), (21, 65), (157, 134), (10, 12), (74, 14), (12,190), (6, 2), (100, 100), (12, 24)]
+	random.seed (982)
+	landscape = []
+	co_count = 0
+	while co_count <= num_cities:
+		x = random.randint (0, 50)
+		y = random.randint (0, 50)
+		pair = (x,y)
+		landscape.append(pair)
+		co_count+=1
+	print(f"Landscape {landscape}")
 	return landscape
 
+
 def init_population(population, num_cities):
-	""""""
+	"""Create initial population."""
 	random.seed(123)
+	seed_route = list (range (0, num_cities))
+	print(f"seed_route {seed_route}")
 	pop_counter = 0
 	new_pop = []
 	while pop_counter <= population:
-		new_route= np.random.permutation(num_cities)
-		new_pop.append(new_route)
+		new_seed = copy.deepcopy(seed_route)
+		# print(f"new_seed {new_seed}")
+		shuffle(new_seed)
+		# print(f"shuffled {new_seed}")
+		new_pop.append(new_seed)
 		pop_counter+=1
-	# print(new_pop)
+	# print(f"new_pop {new_pop}")
 	return new_pop
+
 
 def list_to_dict(incoming_list):
 	"""Helper function converts route list to dict and renumbers city ready for further processing."""
@@ -51,96 +65,84 @@ def list_to_dict(incoming_list):
 	route_counter = 0
 	converted_dict = []
 	for item in incoming_list:
-		ga_dict = {}
-		ga_dict = {"id": 0, "cities": [], "distance": 0}
-		ga_dict["id"] = route_counter
-		ga_dict["cities"] = item
-		converted_dict.append(ga_dict)
+		route_dictionary = {}
+		route_dictionary = {"id": 0, "cities": [], "norm":0, "distance": 0}
+		route_dictionary["id"] = route_counter
+		route_dictionary["cities"] = item
+		converted_dict.append(route_dictionary)
 		route_counter+=1
 	# print(f"{converted_dict}")
 	return converted_dict
 
-def measure_route(population, num_cities=10):
+
+def measure_route(population, num_cities):
 	"""Calculate total distance for each chromosome dictionary and return updated population."""
+	# print (f"population IN {population}")
 	for each_chromosome in population:
 		each_chromosome["distance"] = calculate_distance (each_chromosome, num_cities)
+	# print (f"population OUT {population}")
 	return population
 
-def calculate_distance(ga_dict, num_cities=10):
+
+def calculate_distance(route_dictionary, num_cities):
 	"""Given route dictionary and the number of cities as arguments in a route return total Euclidean distance for entire route
 	including back to base to two decimal places."""
 	total_distance = 0
 	counter = 0
 	while counter < num_cities-1:
-		city_1 = ga_dict["cities"][counter]
-		city_2 = ga_dict["cities"][counter+1]
+		city_1 = route_dictionary["cities"][counter]
+		city_2 = route_dictionary["cities"][counter+1]
 		step_distance = get_distance(city_1, city_2)
 		total_distance = total_distance + step_distance
 		counter += 1
-	back_to_start = get_distance (ga_dict["cities"][0], ga_dict["cities"][num_cities - 1])
+	back_to_start = get_distance (route_dictionary["cities"][0], route_dictionary["cities"][num_cities - 1])
 	total_distance = total_distance + back_to_start
-	return round(total_distance,2)
+	route_dictionary["distance"] = round(total_distance,2)
+	return total_distance
+
 
 def get_distance(city_1, city_2):
 	"""Given two city labels as argument and the global landscape, look up x,y coordinates and return
 	Euclidean distance between them to two decimal places."""
 	global landscape
-	this_distance = math.hypot(landscape[city_1][0] - landscape[city_1][1], landscape[city_2][0] - landscape[city_2][1])
-	# print(f"{city_1, city_2, round(this_distance,2)}")
-	return int(this_distance)
+	this_distance = math.hypot((landscape[city_1][0] - landscape[city_1][1]), (landscape[city_2][0] - landscape[city_2][1]))
+	# print(f"Distances {city_1, city_2, abs(this_distance)}")
+	return this_distance
+
 
 def sort_distances(pop_returned):
 	"""Rank population by route distance - shorter distance is better."""
 	pop_returned.sort(key=lambda e: e['distance'])
 	return pop_returned
 
-def run_stats(population):
-	"""Takes population with measured routes as input, returns min and max route lengths."""
-	min_value = 0
-	max_value = 0
-	distance_data = []
-	for route in population:
-		if isinstance (route, dict):
-			run_data = {}
-			run_data = {"id": 0, "distance": 0, "norm":0}
-			for key, value in route.items ():
-				if key == "id":
-					run_data["id"]=value
-				elif key == "distance":
-					run_data["distance"]=value
-			distance_data.append(run_data)
-	sorted_distances=sort_distances(distance_data)
-	# print(sorted_distances)
-	min_value=sorted_distances[0]["distance"]
-	max_value=sorted_distances[-1]["distance"]
-	run_stats=min_value, max_value, sorted_distances
+
+def analyse_population(population):
+	"""Takes population with measured routes as input, returns min, max, norm, route lengths."""
+	ranked_population=sort_distances(population)
+	min_value=ranked_population[0]["distance"]
+	max_value=ranked_population[-1]["distance"]
+	run_stats=normalise_distances (min_value, max_value, ranked_population)
 	print(f"Min {min_value} Max {max_value}")
-	return run_stats
+	return ranked_population
 
-def normalise_distances(min_value, max_value,sorted_distances):
-	"""Normalise distances, takes min, max of sorted_distances, returns normalised value for each distance."""
-	for each_distance in sorted_distances:
+
+def normalise_distances(min_value, max_value,ranked_population):
+	"""Normalise distances, takes min, max of ranked_population, returns normalised value for each distance."""
+	for each_distance in ranked_population:
 		normalised = (each_distance["distance"]-min_value)/(max_value-min_value)
-		each_distance["norm"]=normalised
-	# print(sorted_distances)
-	return sorted_distances
+		each_distance["norm"]=round(normalised,2)
+	return ranked_population
 
-def select_elite(sorted_distances, elite_prop):
-	elite_num = int((len(sorted_distances)*elite_prop)/100)
-	elite=sorted_distances[0:elite_num]
-	elite_ids=[]
-	print(f"Elite {elite_num}")
-	for champion in elite:
-		elite_ids.append(champion["id"])
-	print(elite_ids)
-	return elite_ids
 
-def main_genetic(elite_ids, fit_pop):
+def select_elite(ranked_population, elite_prop):
+	elite_num = int((len(ranked_population)*elite_prop)/100)
+	elite=ranked_population[0:elite_num]
+	print (f"select_elite out {elite}")
+	return elite
+
+def utility_function(elite_ids, fit_pop):
 	"""Main function."""
 	elite_list = []
-	# print (fit_pop)
-	# Get the elite dictionaries
-	id_count = 0
 	elite_pointer=0
 	while elite_pointer < len(elite_ids):
 		for each_dict in fit_pop:
@@ -150,86 +152,117 @@ def main_genetic(elite_ids, fit_pop):
 				else:
 					pass
 		elite_pointer+=1
-	for _ in elite_list:
-		print(f"{  _  }")
+	# for x in elite_list:
+	# 	print(f"Elite {x}")
 	return elite_list
 
-def cross_mutate(elite_list, num_cities):
-	"""Single point crossover and mutation.
-	This version applies crossover to all the elite chromosomes."""
-	# print (f"elite_list in {len(elite_list)}\n")
-	new_pool = []
-	split_point = int (num_cities / 2)
-	print (f"Split point {split_point}")
-	elite_counter = 0
-	while elite_counter < len(elite_list):
-		champion=elite_list[elite_counter]
-		print (f"{champion}")
-		for key, value in champion.items ():
-			# Generates one gene
-			if key == "cities":
-				crossed = []
-				x = value[0:split_point]
-				y = elite_list[elite_counter+1][split_point:]
-				# print (f"elite counter A {elite_counter}")
-				crossed.extend (x[0:split_point])
-				crossed.extend (y[split_point:])
-				new_pool.append (crossed)
-		elite_counter+=1
-			# 	# Gives second gene
-			# 	crossed_2 = []
-			# 	crossed_2.extend (value[split_point:])
-			# 	crossed_2.extend (value[0:split_point])
-			# 	new_pool.append (crossed_2)
-			# else:
-			# 	pass
-	for item in new_pool:
-		print(f"{item}")
+def divide_parents(list_to_split, parents_size):
+	"""From http://bit.ly/2SYwPwY
+	Splits list into N parents each of parents_size"""
+	for i in range (0, len (list_to_split), parents_size):
+		yield list_to_split[i:i + parents_size]
 
-# 	print (f"new_pool {new_pool}\n")
-	# new_dict_list = list_to_dict (new_pool)
-	# for chromosome in new_dict_list:
-	# 	int_random = random.uniform (0, 1)
-	# 	if int_random <= p_mutate:
-	# 		target_c = chromosome
-	# 		mutate (target_c, num_cities)
-	# 		chromosome = target_c
-	# 	elif int_random > p_mutate:
-	# 		pass
-	# mutated_pop = renumber_route_dict (new_dict_list, num_cities)
-	# print (f"cross mutate out {len(mutated_pop)}\n{mutated_pop}\n")
-	# return mutated_pop
+def mutate(chromosome):
+	"""Simple mutation function exchanging two cities so as not to create duplicate cities. """
+	# print(new_route)
+	random_cities = list (range (0, len (chromosome)))
+	rand_items = random.sample (random_cities, 2)
+	chromosome[rand_items[0]], chromosome[rand_items[1]] = chromosome[rand_items[1]], chromosome[rand_items[0]]
+	return chromosome
 
+def single_crossover(elite_list, num_cities, population):
+	"""Single point crossover and mutation. This version applies single point crossover to all the elite chromosomes
+	by random selection of parents"""
+	# TODO Shuffle?
+	# Add all members of the elite list to the new pool.
+	new_pool = elite_list
+	print (f"single cross IN {new_pool}")
+	# split_point = random.randint(0,10)
+	split_point=round(num_cities/2)
+	elite_l = len(elite_list)
+	counter = elite_l
+	while counter < population:
+		route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
+		parent_1 = random.randint (0, elite_l)
+		parent_2 = random.randint (0, elite_l)
+		x = elite_list[parent_1]["cities"][0:split_point]
+		y = elite_list[parent_2]["cities"][split_point:]
+		route_dictionary["cities"] = x + y
+		new_pool.append(route_dictionary)
+		route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
+		a = elite_list[parent_2]["cities"][split_point:]
+		b = elite_list[parent_1]["cities"][0:split_point]
+		route_dictionary["cities"] = a + b
+		new_pool.append (route_dictionary)
+		counter+=2
+		# print(new_pool)
+	print (f"single cross OUT {new_pool}")
+	return new_pool
 
+	# Mutation with probability of p_mutate
+def mutate_pool(population, new_pool, p_mutate):
+	""" Mutate new_pool"""
+	for chromosome in new_pool:
+		while len(new_pool) < population:
+			int_random = random.uniform (0, 1)
+			if int_random <= p_mutate:
+				target_c = chromosome
+				mutate (target_c)
+				chromosome = target_c
+				new_pool.append (chromosome)
+			elif int_random > p_mutate:
+				pass
+	# print (f"{len(new_pool)}")
+	# for item in new_pool:
+	# 	print (f"{item}")
+	return new_pool
 
-
-
+#
 def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	"""Calls main functions."""
 	# INITIAL SETUP
 	global landscape
 	landscape=init_landscape(num_cities)
 	initial_pop=init_population(population,num_cities)
-	new_pop = list_to_dict (initial_pop)
-	fit_pop=measure_route(new_pop, num_cities)
-	min_value, max_value, sorted_distances=run_stats(fit_pop)
-	sorted_distances=normalise_distances(min_value, max_value, sorted_distances)
-	elite_ids=select_elite (sorted_distances, elite_prop)
-	elite_list=main_genetic (elite_ids, fit_pop)
-	# cross_mutate(elite_list, num_cities)
+	new_generation = list_to_dict (initial_pop)
+	run_count = 0
+	while run_count < runs:
+		print (f"\rRun {run_count} ", end="")
+		fit_pop = measure_route (new_generation, num_cities)
+		ranked_population = analyse_population(fit_pop)
+		current_elite = select_elite (ranked_population, elite_prop)
+		new_generation = single_crossover (current_elite, num_cities, population)
+		# x_pool=mutate_pool(population, new_pool, p_mutate)
+		print (f"new_generation {len(new_generation)}")
+		yield new_generation
+		for item in new_generation:
+			print (f"{item}")
+		sys.stdout.flush ()
+		run_count += 1
 
-# MAIN LOOP
-	# extract_fittest(ranked_pop, elite_prop)
+# CALL MAIN LOOP
+run_genetic(runs=10, population=40, num_cities=8, elite_prop=50, p_mutate=0.30)
+#
+# 	print (f"COMPLETE")
+	# # Use df and matplotlib to chart results
+	# min_distance_data.sort ()
+	# labels = ['run', 'min_dist', 'max_dist']
+	# df_min_dist = pd.DataFrame.from_records (min_distance_data, columns=labels)
+	# min = df_min_dist['min_dist'].min ()
+	# max = df_min_dist['max_dist'].max ()
+	# mean = df_min_dist.loc[:, "min_dist"].mean ()
+	# print (f"Stats Min {min} Max {max} Mean {mean}")
+	#
+	# ax = plt.gca ()
+	# plt.axis ([0, generations, 0, df_min_dist['max_dist'].max ()])
+	# df_min_dist.plot (kind='line', x='run', y='min_dist', ax=ax)
+	# plt.title ("TSP GA")
+	# plt.show ()
 
-run_genetic(runs=50, population=50, num_cities=10, elite_prop=20, p_mutate=0.001)
 
-# def extract_fittest(distance_data, elite_prop):
-# 	"""Get the N fittest chromosomes (those with shortest route) as a percentage of the ranked population."""
-# 	elite_num = int((len(distance_data)*elite_prop)/100)
-# 	elite=distance_data[1:elite_num]
-# 	# print(distance_data)
-# 	# print(elite)
-# 	return elite
+
+
+
 
 
 
