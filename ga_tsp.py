@@ -40,6 +40,7 @@ def init_landscape(num_cities):
 	print(f"Landscape {landscape}")
 	return landscape
 
+#  TEST LINE
 
 def init_population(population, num_cities):
 	"""Create initial population."""
