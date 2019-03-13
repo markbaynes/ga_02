@@ -66,7 +66,6 @@ def list_to_dict(incoming_list):
 	route_counter = 0
 	converted_dict = []
 	for item in incoming_list:
-		route_dictionary = {}
 		route_dictionary = {"id": 0, "cities": [], "norm":0, "distance": 0}
 		route_dictionary["id"] = route_counter
 		route_dictionary["cities"] = item
@@ -124,14 +123,15 @@ def analyse_population(population):
 	max_value=ranked_population[-1]["distance"]
 	run_stats=normalise_distances (min_value, max_value, ranked_population)
 	print(f"Min {min_value} Max {max_value}")
-	return ranked_population
+	return run_stats
 
 
 def normalise_distances(min_value, max_value,ranked_population):
 	"""Normalise distances, takes min, max of ranked_population, returns normalised value for each distance."""
-	for each_distance in ranked_population:
-		normalised = (each_distance["distance"]-min_value)/(max_value-min_value)
-		each_distance["norm"]=round(normalised,2)
+	for each_route in ranked_population:
+		each_route["norm"] = (each_route["distance"]-min_value)/(max_value-min_value)
+		# each_route["norm"]=normalised
+	print(f"Normed {len(ranked_population)}\n{len(ranked_population)}\n")
 	return ranked_population
 
 
@@ -172,32 +172,31 @@ def mutate(chromosome):
 	return chromosome
 
 def single_crossover(elite_list, num_cities, population):
-	"""Single point crossover and mutation. This version applies single point crossover to all the elite chromosomes
-	by random selection of parents"""
+	"""Single point crossover and mutation."""
 	# TODO Shuffle?
 	# Add all members of the elite list to the new pool.
 	new_pool = elite_list
-	print (f"single cross IN {new_pool}")
+	# print (f"single cross IN {len(elite_list)}\n{elite_list}\n")
 	# split_point = random.randint(0,10)
 	split_point=round(num_cities/2)
-	elite_l = len(elite_list)
-	counter = elite_l
-	while counter < population:
-		route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
-		parent_1 = random.randint (0, elite_l)
-		parent_2 = random.randint (0, elite_l)
+	start = 0
+	stop = 19
+	for ix, parent in enumerate (elite_list[start:stop], start=start):
+		parent_1 = ix
+		parent_2 = ix + 1
 		x = elite_list[parent_1]["cities"][0:split_point]
 		y = elite_list[parent_2]["cities"][split_point:]
-		route_dictionary["cities"] = x + y
-		new_pool.append(route_dictionary)
-		route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
-		a = elite_list[parent_2]["cities"][split_point:]
-		b = elite_list[parent_1]["cities"][0:split_point]
-		route_dictionary["cities"] = a + b
-		new_pool.append (route_dictionary)
-		counter+=2
-		# print(new_pool)
-	print (f"single cross OUT {new_pool}")
+		new_child = {"id": 0, "cities": [], "norm":0, "distance": 0}
+		new_child["cities"] = x + y
+		new_pool.append (new_child)
+		# route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
+		a = elite_list[parent_1]["cities"][split_point:]
+		b = elite_list[parent_2]["cities"][0:split_point]
+		new_child = {"id": 0, "cities": [], "norm":0, "distance": 0}
+		new_child["cities"] = a + b
+		new_pool.append (new_child)
+		pass
+	print (f"single cross OUT {len(new_pool)}\n{new_pool}\n")
 	return new_pool
 
 	# Mutation with probability of p_mutate
@@ -229,20 +228,31 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	run_count = 0
 	while run_count < runs:
 		print (f"\rRun {run_count} ", end="")
-		fit_pop = measure_route (new_generation, num_cities)
-		ranked_population = analyse_population(fit_pop)
-		current_elite = select_elite (ranked_population, elite_prop)
-		new_generation = single_crossover (current_elite, num_cities, population)
-		# x_pool=mutate_pool(population, new_pool, p_mutate)
-		print (f"new_generation {len(new_generation)}")
-		yield new_generation
+		measured_pop = measure_route (new_generation, num_cities) # OK
+		print (f"measured_pop {len(measured_pop)}\n")
+		for item in measured_pop:
+			print (f"{item}")
+		analysed_population = analyse_population(measured_pop) # OK
+		print (f"analysed_population")
+		for item in analysed_population:
+			print (f"{item}")
+		current_elite = select_elite (analysed_population, elite_prop) # OK
+		# print (f"current_elite")
+		# for item in current_elite:
+		# 	print (f"{item}")
+		new_generation=single_crossover (current_elite, num_cities, population)
+		print (f"new_generation")
 		for item in new_generation:
 			print (f"{item}")
-		sys.stdout.flush ()
+		# # x_pool=mutate_pool(population, new_pool, p_mutate)
 		run_count += 1
+		# print (f"new_generation")
+		# for item in new_generation:
+		# 	print (f"{item}")
+		# sys.stdout.flush ()
 
 # CALL MAIN LOOP
-run_genetic(runs=10, population=40, num_cities=8, elite_prop=50, p_mutate=0.30)
+run_genetic(runs=10, population=10, num_cities=8, elite_prop=50, p_mutate=0.30)
 #
 # 	print (f"COMPLETE")
 	# # Use df and matplotlib to chart results
