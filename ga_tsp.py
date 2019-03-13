@@ -49,7 +49,7 @@ def init_population(population, num_cities):
 	print(f"seed_route {seed_route}")
 	pop_counter = 0
 	new_pop = []
-	while pop_counter <= population:
+	while pop_counter < population:
 		new_seed = copy.deepcopy(seed_route)
 		# print(f"new_seed {new_seed}")
 		shuffle(new_seed)
@@ -116,29 +116,34 @@ def sort_distances(pop_returned):
 	return pop_returned
 
 
-def analyse_population(population):
+def analyse_population(x):
 	"""Takes population with measured routes as input, returns min, max, norm, route lengths."""
-	ranked_population=sort_distances(population)
-	min_value=ranked_population[0]["distance"]
-	max_value=ranked_population[-1]["distance"]
-	run_stats=normalise_distances (min_value, max_value, ranked_population)
-	print(f"Min {min_value} Max {max_value}")
-	return run_stats
+	print(f"analysed population {len(x)}")
+	for item in x:
+		print (f"{item}")
+	ranked_population=sort_distances(x)
+	print(f"ranked_population  {len(ranked_population)} {ranked_population}")
+	for item in ranked_population:
+		print (f"{item}")
+	# min_value=ranked_population[0]["distance"]
+	# max_value=ranked_population[-1]["distance"]
+	# run_stats=normalise_distances (min_value, max_value, ranked_population)
+	# print(f"Min {min_value} Max {max_value}")
+	# return run_stats
 
 
 def normalise_distances(min_value, max_value,ranked_population):
 	"""Normalise distances, takes min, max of ranked_population, returns normalised value for each distance."""
+	# print(f"Ranked pop IN {len(ranked_population)} {ranked_population}")
 	for each_route in ranked_population:
 		each_route["norm"] = (each_route["distance"]-min_value)/(max_value-min_value)
-		# each_route["norm"]=normalised
-	print(f"Normed {len(ranked_population)}\n{len(ranked_population)}\n")
 	return ranked_population
 
 
 def select_elite(ranked_population, elite_prop):
 	elite_num = int((len(ranked_population)*elite_prop)/100)
 	elite=ranked_population[0:elite_num]
-	print (f"select_elite out {elite}")
+	# print (f"select_elite out {elite}")
 	return elite
 
 def utility_function(elite_ids, fit_pop):
@@ -175,29 +180,31 @@ def single_crossover(elite_list, num_cities, population):
 	"""Single point crossover and mutation."""
 	# TODO Shuffle?
 	# Add all members of the elite list to the new pool.
-	new_pool = elite_list
+	# new_pool = elite_list
+	new_pool = []
+	e_length = len(elite_list)
 	# print (f"single cross IN {len(elite_list)}\n{elite_list}\n")
 	# split_point = random.randint(0,10)
 	split_point=round(num_cities/2)
-	start = 0
-	stop = 19
-	for ix, parent in enumerate (elite_list[start:stop], start=start):
-		parent_1 = ix
-		parent_2 = ix + 1
-		x = elite_list[parent_1]["cities"][0:split_point]
-		y = elite_list[parent_2]["cities"][split_point:]
-		new_child = {"id": 0, "cities": [], "norm":0, "distance": 0}
-		new_child["cities"] = x + y
-		new_pool.append (new_child)
-		# route_dictionary = {"id": 0, "cities": [], "norm": 0, "distance": 0}
-		a = elite_list[parent_1]["cities"][split_point:]
-		b = elite_list[parent_2]["cities"][0:split_point]
-		new_child = {"id": 0, "cities": [], "norm":0, "distance": 0}
-		new_child["cities"] = a + b
-		new_pool.append (new_child)
-		pass
-	print (f"single cross OUT {len(new_pool)}\n{new_pool}\n")
-	return new_pool
+	for chromosome in elite_list:
+		while len(new_pool) < population:
+			p_1 = random.randint(0,e_length)
+			p_2 = random.randint(0,e_length)
+			parent_1 = elite_list[p_1]["cities"][0:split_point]
+			candidate = elite_list[p_2]["cities"][split_point:]
+			set_1, set_2 = set (parent_1), set (candidate)
+			if set_1.isdisjoint(set_2): # Check no overlap
+				print (f"No overlap between {candidate} and {parent_1}")
+				parent_2 = elite_list[p_2]["cities"][split_point:]
+				print (f"parent_2{parent_2}")
+				# child_route = parent_1 + parent_2
+				# child = {"id": 0, "cities": [], "norm": 0, "distance": 0}
+				# child["cities"] = child_route
+				# new_pool.append (child_route)
+			else:
+				break
+			# print (f"single cross OUT {len(new_pool)}\n{new_pool}\n")
+		return new_pool
 
 	# Mutation with probability of p_mutate
 def mutate_pool(population, new_pool, p_mutate):
@@ -228,22 +235,10 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	run_count = 0
 	while run_count < runs:
 		print (f"\rRun {run_count} ", end="")
-		measured_pop = measure_route (new_generation, num_cities) # OK
-		print (f"measured_pop {len(measured_pop)}\n")
-		for item in measured_pop:
-			print (f"{item}")
-		analysed_population = analyse_population(measured_pop) # OK
-		print (f"analysed_population")
-		for item in analysed_population:
-			print (f"{item}")
-		current_elite = select_elite (analysed_population, elite_prop) # OK
-		# print (f"current_elite")
-		# for item in current_elite:
-		# 	print (f"{item}")
+		measured_pop = measure_route (new_generation, num_cities)
+		x = analyse_population(measured_pop)
+		current_elite = select_elite (x, elite_prop)
 		new_generation=single_crossover (current_elite, num_cities, population)
-		print (f"new_generation")
-		for item in new_generation:
-			print (f"{item}")
 		# # x_pool=mutate_pool(population, new_pool, p_mutate)
 		run_count += 1
 		# print (f"new_generation")
