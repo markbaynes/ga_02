@@ -141,7 +141,8 @@ def normalise_distances(min_value, max_value,ranked_population):
 
 
 def select_elite(ranked_population, elite_prop):
-	elite_num = int((len(ranked_population)*elite_prop)/100)
+	print(f"ranked_population {ranked_population}")
+	elite_num = round(len(ranked_population)*elite_prop)/100
 	elite=ranked_population[0:elite_num]
 	# print (f"select_elite out {elite}")
 	return elite
@@ -247,7 +248,7 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 		# sys.stdout.flush ()
 
 # CALL MAIN LOOP
-run_genetic(runs=10, population=10, num_cities=8, elite_prop=50, p_mutate=0.30)
+run_genetic(runs=10, population=50, num_cities=20, elite_prop=20, p_mutate=0.30)
 #
 # 	print (f"COMPLETE")
 	# # Use df and matplotlib to chart results
