@@ -23,6 +23,7 @@ import matplotlib.animation as animation
 
 landscape="global"
 
+
 def init_landscape(num_cities):
 	"""Generate list of random x,y co-ordinates in 2D space.
 	Only need to represent this seed route - not all possible x,y in the space."""
@@ -41,6 +42,7 @@ def init_landscape(num_cities):
 	return landscape
 
 #  TEST LINE ADDED
+
 
 def init_population(population, num_cities):
 	"""Create initial population."""
@@ -77,10 +79,8 @@ def list_to_dict(incoming_list):
 
 def measure_route(population, num_cities):
 	"""Calculate total distance for each chromosome dictionary and return updated population."""
-	# print (f"population IN {population}")
 	for each_chromosome in population:
 		each_chromosome["distance"] = calculate_distance (each_chromosome, num_cities)
-	# print (f"population OUT {population}")
 	return population
 
 
@@ -106,7 +106,6 @@ def get_distance(city_1, city_2):
 	Euclidean distance between them to two decimal places."""
 	global landscape
 	this_distance = math.hypot((landscape[city_1][0] - landscape[city_1][1]), (landscape[city_2][0] - landscape[city_2][1]))
-	# print(f"Distances {city_1, city_2, abs(this_distance)}")
 	return this_distance
 
 
@@ -118,18 +117,12 @@ def sort_distances(pop_returned):
 
 def analyse_population(x):
 	"""Takes population with measured routes as input, returns min, max, norm, route lengths."""
-	print(f"analysed population {len(x)}")
-	for item in x:
-		print (f"{item}")
 	ranked_population=sort_distances(x)
-	print(f"ranked_population  {len(ranked_population)} {ranked_population}")
-	for item in ranked_population:
-		print (f"{item}")
-	# min_value=ranked_population[0]["distance"]
-	# max_value=ranked_population[-1]["distance"]
-	# run_stats=normalise_distances (min_value, max_value, ranked_population)
-	# print(f"Min {min_value} Max {max_value}")
-	# return run_stats
+	min_value=ranked_population[0]["distance"]
+	max_value=ranked_population[-1]["distance"]
+	run_stats=normalise_distances (min_value, max_value, ranked_population)
+	print(f"Min {round(min_value)} Max {round(max_value)}")
+	return run_stats
 
 
 def normalise_distances(min_value, max_value,ranked_population):
@@ -141,11 +134,13 @@ def normalise_distances(min_value, max_value,ranked_population):
 
 
 def select_elite(ranked_population, elite_prop):
-	print(f"ranked_population {ranked_population}")
-	elite_num = round(len(ranked_population)*elite_prop)/100
-	elite=ranked_population[0:elite_num]
+	# print(f"ranked_population {ranked_population}")
+	# elite_num = round(len(ranked_population)*elite_prop)/100
+	# TODO Change elite_prop to elite_num
+	elite = ranked_population[0:elite_prop]
 	# print (f"select_elite out {elite}")
 	return elite
+
 
 def utility_function(elite_ids, fit_pop):
 	"""Main function."""
@@ -158,16 +153,9 @@ def utility_function(elite_ids, fit_pop):
 					elite_list.append(each_dict["cities"])
 				else:
 					pass
-		elite_pointer+=1
-	# for x in elite_list:
-	# 	print(f"Elite {x}")
+		elite_pointer += 1
 	return elite_list
 
-def divide_parents(list_to_split, parents_size):
-	"""From http://bit.ly/2SYwPwY
-	Splits list into N parents each of parents_size"""
-	for i in range (0, len (list_to_split), parents_size):
-		yield list_to_split[i:i + parents_size]
 
 def mutate(chromosome):
 	"""Simple mutation function exchanging two cities so as not to create duplicate cities. """
@@ -177,35 +165,38 @@ def mutate(chromosome):
 	chromosome[rand_items[0]], chromosome[rand_items[1]] = chromosome[rand_items[1]], chromosome[rand_items[0]]
 	return chromosome
 
-def single_crossover(elite_list, num_cities, population):
+
+def single_crossover(current_elite, num_cities, population):
 	"""Single point crossover and mutation."""
-	# TODO Shuffle?
 	# Add all members of the elite list to the new pool.
-	# new_pool = elite_list
-	new_pool = []
-	e_length = len(elite_list)
-	# print (f"single cross IN {len(elite_list)}\n{elite_list}\n")
+	new_pool = current_elite
+	e_length = len(current_elite)
+	# print(f"single cross IN {len(current_elite)}\n{current_elite}\n")
 	# split_point = random.randint(0,10)
-	split_point=round(num_cities/2)
-	for chromosome in elite_list:
-		while len(new_pool) < population:
-			p_1 = random.randint(0,e_length)
-			p_2 = random.randint(0,e_length)
-			parent_1 = elite_list[p_1]["cities"][0:split_point]
-			candidate = elite_list[p_2]["cities"][split_point:]
-			set_1, set_2 = set (parent_1), set (candidate)
-			if set_1.isdisjoint(set_2): # Check no overlap
-				print (f"No overlap between {candidate} and {parent_1}")
-				parent_2 = elite_list[p_2]["cities"][split_point:]
-				print (f"parent_2{parent_2}")
-				# child_route = parent_1 + parent_2
-				# child = {"id": 0, "cities": [], "norm": 0, "distance": 0}
-				# child["cities"] = child_route
-				# new_pool.append (child_route)
+	split_point = round(num_cities / 2)
+	while len(new_pool) < population:
+		p_1 = random.randint(0, e_length)
+		p_2 = random.randint(0, e_length)
+		print(p_1,p_2)
+		if p_1 != p_2:
+			parent_1 = current_elite[p_1]["cities"][:split_point]
+			print(f"parent_1{parent_1}")
+			candidate = current_elite[p_2]["cities"][split_point:]
+			print(f'{current_elite[p_2]["cities"]}')
+			set_1, set_2 = set(parent_1), set(candidate)
+			if set_1.isdisjoint(set_2):  # Check no overlap
+				print(f"No overlap between candidate {candidate} and parent 1 {parent_1}")
+				child = candidate
+				print(f"child {child}")
+				new_pool.append(child)
+				print(f"Adding {child} to new pool\n{new_pool}")
 			else:
-				break
-			# print (f"single cross OUT {len(new_pool)}\n{new_pool}\n")
-		return new_pool
+				pass
+		else:
+			pass
+	# print(f"single cross OUT {len(new_pool)}\n{new_pool}\n")
+	return new_pool
+
 
 	# Mutation with probability of p_mutate
 def mutate_pool(population, new_pool, p_mutate):
@@ -220,12 +211,9 @@ def mutate_pool(population, new_pool, p_mutate):
 				new_pool.append (chromosome)
 			elif int_random > p_mutate:
 				pass
-	# print (f"{len(new_pool)}")
-	# for item in new_pool:
-	# 	print (f"{item}")
 	return new_pool
 
-#
+
 def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	"""Calls main functions."""
 	# INITIAL SETUP
@@ -235,20 +223,18 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 	new_generation = list_to_dict (initial_pop)
 	run_count = 0
 	while run_count < runs:
-		print (f"\rRun {run_count} ", end="")
+		print(f"\rRun {run_count}\n", end="")
 		measured_pop = measure_route (new_generation, num_cities)
-		x = analyse_population(measured_pop)
-		current_elite = select_elite (x, elite_prop)
-		new_generation=single_crossover (current_elite, num_cities, population)
-		# # x_pool=mutate_pool(population, new_pool, p_mutate)
+		analysed = analyse_population(measured_pop)
+		current_elite = select_elite(analysed, elite_prop)
+		new_generation=single_crossover(current_elite, num_cities, population)
+		# x_pool=mutate_pool(population, new_pool, p_mutate)
 		run_count += 1
-		# print (f"new_generation")
-		# for item in new_generation:
-		# 	print (f"{item}")
 		# sys.stdout.flush ()
 
+
 # CALL MAIN LOOP
-run_genetic(runs=10, population=50, num_cities=20, elite_prop=20, p_mutate=0.30)
+run_genetic(runs=10, population=30, num_cities=10, elite_prop=5, p_mutate=0.30)
 #
 # 	print (f"COMPLETE")
 	# # Use df and matplotlib to chart results
