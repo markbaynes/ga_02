@@ -5,6 +5,7 @@ import sys
 import operator
 import copy
 import math
+import time
 import collections
 from collections import defaultdict
 
@@ -133,11 +134,11 @@ def normalise_distances(min_value, max_value,ranked_population):
 	return ranked_population
 
 
-def select_elite(ranked_population, elite_prop):
+def select_elite(ranked_population, num_elite):
 	# print(f"ranked_population {ranked_population}")
-	# elite_num = round(len(ranked_population)*elite_prop)/100
-	# TODO Change elite_prop to elite_num
-	elite = ranked_population[0:elite_prop]
+	# elite_num = round(len(ranked_population)*num_elite)/100
+	# TODO Change num_elite to elite_num
+	elite = ranked_population[0:num_elite]
 	# print (f"select_elite out {elite}")
 	return elite
 
@@ -165,36 +166,44 @@ def mutate(chromosome):
 	chromosome[rand_items[0]], chromosome[rand_items[1]] = chromosome[rand_items[1]], chromosome[rand_items[0]]
 	return chromosome
 
+""" The important thing to remember with 'crossover' is that there is no
+one right way of doing it."""
 
 def single_crossover(current_elite, num_cities, population):
 	"""Single point crossover and mutation."""
 	# Add all members of the elite list to the new pool.
 	new_pool = current_elite
-	e_length = len(current_elite)
-	# print(f"single cross IN {len(current_elite)}\n{current_elite}\n")
-	# split_point = random.randint(0,10)
+	# new_pool=[]
+	# split_point = random.randint(0,num_cities)
 	split_point = round(num_cities / 2)
-	while len(new_pool) < population:
-		p_1 = random.randint(0, e_length)
-		p_2 = random.randint(0, e_length)
-		print(p_1,p_2)
-		if p_1 != p_2:
-			parent_1 = current_elite[p_1]["cities"][:split_point]
-			print(f"parent_1{parent_1}")
-			candidate = current_elite[p_2]["cities"][split_point:]
-			print(f'{current_elite[p_2]["cities"]}')
-			set_1, set_2 = set(parent_1), set(candidate)
-			if set_1.isdisjoint(set_2):  # Check no overlap
-				print(f"No overlap between candidate {candidate} and parent 1 {parent_1}")
-				child = candidate
-				print(f"child {child}")
-				new_pool.append(child)
-				print(f"Adding {child} to new pool\n{new_pool}")
-			else:
-				pass
-		else:
-			pass
-	# print(f"single cross OUT {len(new_pool)}\n{new_pool}\n")
+	p_counter = 0
+	print (f"\nCounter {p_counter}\n")
+	while p_counter <= population:
+		p_1, p_2 = random.sample (current_elite, 2)
+		print (p_1, p_2)
+		parent_1 = p_1["cities"][0:split_point]
+		candidate = p_2["cities"][split_point:]
+		print (f'Parent Candidate {parent_1} {candidate}')
+		set_1, set_2 = set (parent_1), set (candidate)
+		if set_1.isdisjoint (set_2):  # Check no overlap
+			print (f"No overlap between candidate {candidate} and parent 1 {parent_1}")
+			child = parent_1 + candidate
+			print (f"child {child}")
+			new_pool.append (child)
+			print (f"Adding {child} to new pool\n{new_pool}")
+			p_counter += 1
+			print(f"\nCounter {p_counter}\n")
+		elif not set_1.isdisjoint (set_2):
+			foo = random.sample (range (0, num_cities), split_point)
+			random.seed (4)
+			sample_list = random.sample (list, 3)
+			print ("random List", sample_list)
+			# set_2 = random.sample (0,10, split_point)
+			print(set_2)
+			break
+	print(f"\nNew pool {len(new_pool)}")
+	for _ in new_pool:
+		print(_)
 	return new_pool
 
 
@@ -214,9 +223,10 @@ def mutate_pool(population, new_pool, p_mutate):
 	return new_pool
 
 
-def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
+def run_genetic(runs, population, num_cities, num_elite, p_mutate):
 	"""Calls main functions."""
 	# INITIAL SETUP
+	startTime = time.time ()
 	global landscape
 	landscape=init_landscape(num_cities)
 	initial_pop=init_population(population,num_cities)
@@ -226,15 +236,18 @@ def run_genetic(runs, population, num_cities, elite_prop, p_mutate):
 		print(f"\rRun {run_count}\n", end="")
 		measured_pop = measure_route (new_generation, num_cities)
 		analysed = analyse_population(measured_pop)
-		current_elite = select_elite(analysed, elite_prop)
+		current_elite = select_elite(analysed, num_elite)
 		new_generation=single_crossover(current_elite, num_cities, population)
 		# x_pool=mutate_pool(population, new_pool, p_mutate)
 		run_count += 1
 		# sys.stdout.flush ()
+		endTime = time.time ()
+		totalTime = endTime - startTime
+		print(f"\rElapsed time {totalTime}\n", end="")
 
 
 # CALL MAIN LOOP
-run_genetic(runs=10, population=30, num_cities=10, elite_prop=5, p_mutate=0.30)
+run_genetic(runs=10, population=50, num_cities=10, num_elite=8, p_mutate=0.30)
 #
 # 	print (f"COMPLETE")
 	# # Use df and matplotlib to chart results
