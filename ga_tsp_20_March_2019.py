@@ -116,22 +116,17 @@ def sort_distances(pop_returned):
 	return pop_returned
 
 
-def analyse_population(measured_pop):
+def analyse_population(population):
 	"""Takes population with measured routes as input, returns min, max, norm, route lengths."""
-	print (f"population IN analyse {measured_pop}")
-	ranked_population=sort_distances(measured_pop)
+	# print (f"population IN analyse {population}")
+	ranked_population=sort_distances(population)
 	min_value=ranked_population[0]["distance"]
 	max_value=ranked_population[-1]["distance"]
 	# print(f"1 Min {min_value} Max {max_value}")
-	ranked_stats = min_value, max_value, ranked_population
-	return ranked_stats
+	run_stats=normalise_distances (min_value,max_value,ranked_population)
+	# print(f"2 Min {min_value} Max {max_value}")
+	return run_stats
 
-def normalise(ranked_stats):
-	min_value, max_value, ranked_population = ranked_stats
-	normalised = normalise_distances (min_value,max_value,ranked_population)
-	# print(f"2 Min {min_value} Max {max_value} Ranked {ranked_population}")
-	# print(f"RUN STATS {run_stats}")
-	return normalised
 
 def normalise_distances(min_value, max_value,ranked_population):
 	"""Normalise distances, takes min, max of ranked_population, returns normalised value for each distance."""
@@ -170,10 +165,89 @@ def utility_function(elite_ids, fit_pop):
 """ The important thing to remember with 'crossover' is that there is no
 one right way of doing it."""
 
+
+def single_crossover(current_elite, num_cities, population):
+	"""Single point crossover and mutation."""
+	# Add all members of the elite list to the new pool.
+	new_pool = current_elite
+	# new_pool=[]
+	# split_point = random.randint(0,num_cities)
+	split_point = round(num_cities / 2)
+	p_counter = len(current_elite)
+	only_routes=[]
+	# print(f"New pool{new_pool}")
+	for existing_route in current_elite:
+		# while p_counter <= population:
+		p_1, p_2 = random.sample (current_elite, 2)
+		parent_1 = p_1["cities"][0:split_point]
+		parent_2 = p_2["cities"][split_point:]
+		child = parent_1 + parent_2
+		for key, value in existing_route.items ():
+			if key == "cities":
+				print (f"existing_route {value}")
+				print (f"child {child}")
+				if value == child:
+					pass
+				elif value != child:
+					only_routes.append(child)
+
+	# while p_counter <= population:
+	# 	p_1, p_2 = random.sample (current_elite, 2)
+	# 	parent_1 = p_1["cities"][0:split_point]
+	# 	parent_2 = p_2["cities"][split_point:]
+	# 	child = parent_1 + parent_2
+	# 	# # TODO CHILD IN NEW POOL!!!!! NOt Equal to one
+	# 	print (f"new_pool {new_pool}")
+	# 	for existing_route in new_pool:
+	# 				if value != child:
+	# 				# print (f"Proposed {child} does not exist in pool so adding")
+	# 					route_dictionary = {"id": 0, "cities": child, "norm": 0, "distance": 0}
+	# 				# print (f'Adding route_dictionary {route_dictionary}')
+	# 					new_pool.append (route_dictionary)
+	# 			elif key == "cities" and value == child:
+	# 				# print (f"Proposed {child} exists in pool as {value}")
+	# 				break
+		p_counter += 1
+	print (f"only_routes {only_routes}")
+	# return new_pool
+
+		# for i in parent_2:
+		# 	if i not in parent_1:
+		# 		child_route.append (i)
+		# 	else:
+		# 		pass
+		# 	child = parent_1 + child_route
+		# if len(child) < num_cities:
+		# 	final_cities = []
+		# 	filler = list(range(num_cities))
+		# 	shuffle(filler)
+		# 	for i in filler:
+		# 		if i not in child:
+		# 			final_cities.append (i)
+		# 		else:
+		# 			pass
+		# 	# print(f'Child 2 {len(child)} {child}')
+		# 	child = child + final_cities
+		# for route in new_pool:
+		# 	for key, value in route.items():
+		# 		if key == "cities":
+		# 			if value == child:
+		# 				# print(f"Exists in pool")
+		# 				break
+		# 			else:
+		# 				# print (f"Does not exist in pool so adding")
+
+			# print (f"Adding {route_dictionary}")
+		# print(f"\nCounter {p_counter}")
+	# print(f"\nNew pool {len(new_pool)}")
+	# 	for _ in new_pool:
+	# 		print(_)
+	# 	shuffle(new_pool)
+
+
 def mutate(chromosome):
 	"""Simple mutation function exchanging two cities so as not to create duplicate cities. """
-	# print("Mutating")
-	random_cities = list (range (0, len (chromosome["cities"])))
+	random_cities = list (range (0, len (chromosome)))
 	x,y = random.sample (random_cities, 2)
 	chromosome["cities"][x], chromosome["cities"][y] = chromosome["cities"][y], chromosome["cities"][x]
 	return chromosome
@@ -187,42 +261,10 @@ def mutate_pool(new_pool, p_mutate):
 			target_c = chromosome
 			mutate (target_c)
 			chromosome = target_c
-			new_pool.append(chromosome)
+			new_pool.append (chromosome)
 		elif int_random > p_mutate:
 			pass
-	# print (f"mutated {new_pool}")
 	return new_pool
-
-def single_crossover(current_elite, num_cities, population, p_mutate):
-	"""Single point crossover and mutation."""
-	# Add all members of the elite list to the new pool.
-	new_pool = current_elite
-	# split_point = random.randint(0,num_cities)
-	split_point = round(num_cities / 2)
-	p_counter = len(current_elite)
-	only_routes=[]
-	# print(f"New pool{new_pool}")
-	for existing_route in current_elite:
-		while p_counter <= population:
-			p_1, p_2 = random.sample (current_elite, 2)
-			parent_1 = p_1["cities"][0:split_point]
-			parent_2 = p_2["cities"][split_point:]
-			child = parent_1 + parent_2
-			for key, value in existing_route.items ():
-				if key == "cities":
-					# print (f"existing_route {value}")
-					# print (f"child {child}")
-					if value != child:
-						existing_route["cities"]=child
-						new_pool.append(existing_route)
-					elif value == child:
-						pass
-			p_counter += 1
-	# print (f"new_pool {new_pool}")
-	return new_pool
-
-
-
 
 
 def run_genetic(runs, population, num_cities, num_elite, p_mutate):
@@ -237,33 +279,34 @@ def run_genetic(runs, population, num_cities, num_elite, p_mutate):
 	while run_count < runs:
 		print(f"\rRun {run_count}\n", end="")
 		measured_pop = measure_route (new_generation, num_cities)
-		# print (f"\n measured_pop")
-		# for _ in measured_pop:
-		# 	print (f"{_}")
-		rank_stats = analyse_population(measured_pop)
-		analysed = (rank_stats)
+		print (f"\nmeasured_pop")
+		for _ in measured_pop:
+			print (f"{_}")
+		analysed = analyse_population(measured_pop)
+		print(f"\nanalysed {len(analysed)}")
+		for _ in analysed:
+			print(f"{_}")
 		current_elite = select_elite(analysed, num_elite)
-		# print(f"\n current_elite {len(current_elite)}")
-		# for _ in current_elite:
-		# 	print(f"{_}")
-		new_generation=single_crossover(current_elite, num_cities, population, p_mutate)
-		# print(f"\n new_generation {len(new_generation)}")
-		# for _ in new_generation:
+		print(f"\ncurrent_elite {len(current_elite)}")
+		for _ in current_elite:
+			print(f"{_}")
+		new_pool=single_crossover(current_elite, num_cities, population)
+		# print(f"\nnew_pool {new_pool}")
+		# for _ in new_pool:
 		# 	print(f"{_}")
 		# new_generation=mutate_pool(new_pool, p_mutate)
 		# print(f"New generation\n")
 		# for _ in new_generation:
 		# 	print(f"{_}")
 		run_count += 1
-		print(run_count)
 		# sys.stdout.flush ()
 	endTime = time.time ()
 	totalTime = endTime - startTime
-	print(f"\rElapsed time {round(totalTime,3)}\n", end="")
+	print(f"\rElapsed time {totalTime}\n", end="")
 
 
 # CALL MAIN LOOP
-run_genetic(runs=20, population=50, num_cities=20, num_elite=6, p_mutate=0.20)
+run_genetic(runs=10, population=100, num_cities=10, num_elite=20, p_mutate=0.30)
 #
 # 	print (f"COMPLETE")
 	# # Use df and matplotlib to chart results
